@@ -54,7 +54,6 @@ model User {
   sessions      Session[]
   orders        Order[]
   userExams     UserExam[]
-  userAnswers   UserAnswer[]
 
   @@index([email])
   @@index([role])
@@ -174,7 +173,6 @@ model UserAnswer {
 
   userExam    UserExam @relation(fields: [userExamId], references: [id], onDelete: Cascade)
   question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userExamId], references: [id], onDelete: Cascade)
 
   @@index([userExamId])
   @@index([questionId])

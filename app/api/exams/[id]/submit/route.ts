@@ -75,7 +75,6 @@ export async function POST(
           questionId,
           selectedAnswer: selectedAnswer as string,
           isCorrect,
-          userId,
         },
       })
     })
