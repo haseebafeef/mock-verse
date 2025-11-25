@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/navbar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -38,27 +38,7 @@ export default function ExamPage({ params }: { params: { id: string } }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    loadExam()
-  }, [params.id])
-
-  useEffect(() => {
-    if (startedAt && timeRemaining > 0) {
-      const timer = setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            handleAutoSubmit()
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-
-      return () => clearInterval(timer)
-    }
-  }, [startedAt, timeRemaining])
-
-  const loadExam = async () => {
+  const loadExam = useCallback(async () => {
     try {
       const response = await fetch(`/api/exams/${params.id}`)
       if (!response.ok) {
@@ -75,39 +55,9 @@ export default function ExamPage({ params }: { params: { id: string } }) {
       console.error('Error loading exam:', error)
       setIsLoading(false)
     }
-  }
+  }, [params.id, router])
 
-  const startExam = async () => {
-    try {
-      const response = await fetch(`/api/exams/${params.id}/start`, {
-        method: 'POST',
-      })
-      if (!response.ok) throw new Error('Failed to start exam')
-
-      const data = await response.json()
-      setUserExamId(data.userExamId)
-      setStartedAt(new Date(data.startedAt))
-
-      // Calculate time remaining
-      if (exam) {
-        const durationSeconds = exam.duration * 60
-        setTimeRemaining(durationSeconds)
-      }
-    } catch (error) {
-      console.error('Error starting exam:', error)
-    }
-  }
-
-  const handleAnswerChange = (questionId: string, answer: string) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: answer }))
-  }
-
-  const handleAutoSubmit = async () => {
-    if (!userExamId || isSubmitting) return
-    await submitExam()
-  }
-
-  const submitExam = async () => {
+  const submitExam = useCallback(async () => {
     if (!userExamId || !exam || isSubmitting) return
 
     setIsSubmitting(true)
@@ -133,6 +83,56 @@ export default function ExamPage({ params }: { params: { id: string } }) {
       console.error('Error submitting exam:', error)
       setIsSubmitting(false)
     }
+  }, [userExamId, exam, isSubmitting, timeRemaining, answers, params.id, router])
+
+  const handleAutoSubmit = useCallback(async () => {
+    if (!userExamId || isSubmitting) return
+    await submitExam()
+  }, [userExamId, isSubmitting, submitExam])
+
+  useEffect(() => {
+    loadExam()
+  }, [loadExam])
+
+  useEffect(() => {
+    if (startedAt && timeRemaining > 0) {
+      const timer = setInterval(() => {
+        setTimeRemaining((prev) => {
+          if (prev <= 1) {
+            handleAutoSubmit()
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+
+      return () => clearInterval(timer)
+    }
+  }, [startedAt, timeRemaining, handleAutoSubmit])
+
+  const startExam = async () => {
+    try {
+      const response = await fetch(`/api/exams/${params.id}/start`, {
+        method: 'POST',
+      })
+      if (!response.ok) throw new Error('Failed to start exam')
+
+      const data = await response.json()
+      setUserExamId(data.userExamId)
+      setStartedAt(new Date(data.startedAt))
+
+      // Calculate time remaining
+      if (exam) {
+        const durationSeconds = exam.duration * 60
+        setTimeRemaining(durationSeconds)
+      }
+    } catch (error) {
+      console.error('Error starting exam:', error)
+    }
+  }
+
+  const handleAnswerChange = (questionId: string, answer: string) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: answer }))
   }
 
   if (isLoading) {
