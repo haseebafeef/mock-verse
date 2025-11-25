@@ -29,6 +29,7 @@ interface Exam {
 
 export default function ExamPage({ params }: { params: { id: string } }) {
   const router = useRouter()
+  const examId = params.id
   const [exam, setExam] = useState<Exam | null>(null)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [currentQuestion, setCurrentQuestion] = useState(0)
@@ -40,7 +41,7 @@ export default function ExamPage({ params }: { params: { id: string } }) {
 
   const loadExam = useCallback(async () => {
     try {
-      const response = await fetch(`/api/exams/${params.id}`)
+      const response = await fetch(`/api/exams/${examId}`)
       if (!response.ok) {
         if (response.status === 403) {
           router.push('/pricing')
@@ -55,7 +56,7 @@ export default function ExamPage({ params }: { params: { id: string } }) {
       console.error('Error loading exam:', error)
       setIsLoading(false)
     }
-  }, [params.id, router])
+  }, [examId, router])
 
   const submitExam = useCallback(async () => {
     if (!userExamId || !exam || isSubmitting) return
@@ -65,7 +66,7 @@ export default function ExamPage({ params }: { params: { id: string } }) {
     try {
       const timeSpent = exam.duration * 60 - timeRemaining
 
-      const response = await fetch(`/api/exams/${params.id}/submit`, {
+      const response = await fetch(`/api/exams/${examId}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -83,7 +84,7 @@ export default function ExamPage({ params }: { params: { id: string } }) {
       console.error('Error submitting exam:', error)
       setIsSubmitting(false)
     }
-  }, [userExamId, exam, isSubmitting, timeRemaining, answers, params.id, router])
+  }, [userExamId, exam, isSubmitting, timeRemaining, answers, examId, router])
 
   const handleAutoSubmit = useCallback(async () => {
     if (!userExamId || isSubmitting) return
@@ -112,7 +113,7 @@ export default function ExamPage({ params }: { params: { id: string } }) {
 
   const startExam = async () => {
     try {
-      const response = await fetch(`/api/exams/${params.id}/start`, {
+      const response = await fetch(`/api/exams/${examId}/start`, {
         method: 'POST',
       })
       if (!response.ok) throw new Error('Failed to start exam')
